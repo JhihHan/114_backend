@@ -48,15 +48,51 @@ def login(form_data:OAuth2PasswordRequestForm = Depends(), response: Response = 
         httponly=True,
         samesite="lax"
     )
-    return ("access_token":access_token,"token_type":"bearer")
+    refresh_token = create_access_token(
+        {"sub": user["username"]},
+        expires_delta=timedelta(days=7)
+    )
+
+    response.set_cookie(
+        key="refresh_jwt",
+        value=refresh_token,
+        httponly=True,
+        samesite="lax"
+    )
+
+    return {"access_token":access_token,"token_type":"bearer"}
 
 @app.get("/user/me")
 def me(token:Optional[str] = Depends(oauth2_schema), jwt_cookie:Optional[str] = Cookie(None)):
     if token:
         username = verify_token(token)
     elif jwt_cookie:
-        username - verify_token(jwt_cookie)
+        username = verify_token(jwt_cookie)
     else:
         raise HTTPException(status_code=401,detail="Missing token or cookie")
     
     return {"message":"Hello, {username}! You are authenticated."}
+
+@app.post("/refresh")
+def refresh_token(refresh_cookie: Optional[str] = Cookie(None), response: Response = None):
+    if not refresh_cookie:
+        raise HTTPException(status_code=401, detail="Missing refresh token")
+
+    # 驗證 refresh token
+    username = verify_token(refresh_cookie)
+
+    # 使用既有的 function 產生新的 access token（30分鐘）
+    new_access_token = create_access_token({"sub": username})
+
+    # 更新 access token cookie
+    response.set_cookie(
+        key="jwt",
+        value=new_access_token,
+        httponly=True,
+        samesite="lax"
+    )
+
+    return {
+        "access_token": new_access_token,
+        "token_type": "bearer"
+    }
