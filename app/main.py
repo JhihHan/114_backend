@@ -1,6 +1,8 @@
+from dotenv import load_dotenv
+load_dotenv()
 from fastapi import FastAPI, Depends, HTTPException, status
 from pydantic import BaseModel
-from app.oauth_google import verify_google_id_token
+from app.google_oauth import verify_google_id_token,exchange_code_for_token
 from app.auth_utils import create_access_token, get_current_user_email
 
 app = FastAPI(title="資工系 114-Backend 示範專案")
@@ -8,6 +10,10 @@ app = FastAPI(title="資工系 114-Backend 示範專案")
 # 定義前端傳入的資料格式
 class TokenRequest(BaseModel):
     id_token: str
+
+class CodeRequest(BaseModel):
+    code: str
+    redirect_uri: str
 
 # 1. Google 登入換取自家 JWT 的接口
 @app.post("/auth/google", summary="Google OAuth 登入驗證")

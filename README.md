@@ -38,7 +38,9 @@ Set-ExecutionPolicy Restricted
 ```bash
 pip install "fastapi[standard]"
 fastapi dev main.py
-
+```
+Start app/main.py
+```
 uvicorn app.main:app --reload
 ```
 > Exit venv
