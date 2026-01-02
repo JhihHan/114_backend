@@ -41,11 +41,12 @@ fastapi dev main.py
 ```
 Start app/main.py
 ```
-uvicorn app.main:app --reload
+uvicorn google_oauth2_example.main:app --reload
 ```
 > Exit venv
 ```bash
 deactivate
 ```
 > Reference
+
 [study](https://github.com/gloomcheng/114-backend)
