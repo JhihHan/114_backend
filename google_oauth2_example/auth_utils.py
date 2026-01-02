@@ -17,7 +17,7 @@ def create_access_token(data: dict):
 
 def get_current_user_email(token: str = Depends(oauth2_scheme)) -> str:
     # 解析 JWT 並回傳 email 的邏輯...
-    credentials_exception = HTTPExceprion(
+    credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="無法驗證憑證",
         headers={"WWW-Authenticate":"Bearer"}

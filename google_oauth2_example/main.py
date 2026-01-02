@@ -2,8 +2,8 @@ from dotenv import load_dotenv
 load_dotenv()
 from fastapi import FastAPI, Depends, HTTPException, status
 from pydantic import BaseModel
-from app.google_oauth import verify_google_id_token,exchange_code_for_token
-from app.auth_utils import create_access_token, get_current_user_email
+from google_oauth2_example.google_oauth import verify_google_id_token,exchange_code_for_token
+from google_oauth2_example.auth_utils import create_access_token, get_current_user_email
 
 app = FastAPI(title="資工系 114-Backend 示範專案")
 
@@ -14,6 +14,44 @@ class TokenRequest(BaseModel):
 class CodeRequest(BaseModel):
     code: str
     redirect_uri: str
+
+@app.post("/auth/google/code", summary="[架構A] 用 Code 換取 JWT")
+async def google_auth_with_code(request: CodeRequest):
+    """
+    接收前端傳來的 authorization code，後端負責：
+    1. 用 code + client_secret 向 Google 換取 tokens
+    2. 驗證 id_token
+    3. 發放自家 JWT
+    """
+    # Step 1: 用 code 換 tokens（這步需要 client_secret，只能在後端做！）
+    tokens = exchange_code_for_tokens(request.code, request.redirect_uri)
+
+    # Step 2: 從 tokens 中取出 id_token 並驗證
+    google_id_token = tokens.get("id_token")
+    if not google_id_token:
+        raise HTTPException(status_code=400, detail="Google 未回傳 id_token")
+
+    user_info = verify_google_id_token(google_id_token)
+
+    # Step 3: 取得使用者資訊
+    user_email = user_info.get("email")
+    if not user_email:
+        raise HTTPException(status_code=400, detail="Google 帳號未提供 Email")
+
+    # Step 4: 發放自家 JWT
+    access_token = create_access_token(data={"sub": user_email})
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "name": user_info.get("name"),
+            "email": user_email,
+            "picture": user_info.get("picture")
+        },
+        # 可選：也回傳 Google 的 tokens，讓前端可以呼叫 Google API
+        "google_access_token": tokens.get("access_token"),
+    }
 
 # 1. Google 登入換取自家 JWT 的接口
 @app.post("/auth/google", summary="Google OAuth 登入驗證")

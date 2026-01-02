@@ -47,3 +47,5 @@ uvicorn app.main:app --reload
 ```bash
 deactivate
 ```
+> Reference
+[study](https://github.com/gloomcheng/114-backend)
